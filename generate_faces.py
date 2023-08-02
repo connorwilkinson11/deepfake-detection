@@ -29,8 +29,9 @@ def main():
         detections_path = video[0]["path"][20:-3] + "jpg"
         detections = net.detect_on_image(frame, TARGET_SIZE, device, is_pad=False, keep_thresh=CONF_THRESH)
         indices = np.rint(detections.flatten()[:4]).astype(int)
-        cropped = frame[indices[1]:indices[3], indices[0]:indices[2], :]
-        cv2.imwrite(os.path.join(DETECTIONS_PATH, detections_path), cropped)
+        if len(indices) is not 0:
+            cropped = frame[indices[1]:indices[3], indices[0]:indices[2], :]
+            cv2.imwrite(os.path.join(DETECTIONS_PATH, detections_path), cropped)
 
 if __name__ == "__main__":
     main()
