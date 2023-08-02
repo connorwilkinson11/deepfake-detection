@@ -34,12 +34,13 @@ class VideoDataset(Dataset):
         return item
 
 class ImageDataset(Dataset):
-    def __init__(self, annotations_file, images_dir, transform=None, target_transform=None):
+    def __init__(self, annotations_file, images_dir, transform=None):
         self.frame_labels = pd.read_json(annotations_file).T
         self.images_dir = images_dir
         self.image_paths = []
         for path in glob.glob(os.path.join(self.images_dir, '*.jpg')):
             self.image_paths.append(path)
+        self.transform = transform
 
     def __len__(self):
         return len(self.image_paths)
@@ -53,10 +54,10 @@ class ImageDataset(Dataset):
         }
         label = label_dict[self.frame_labels.loc[name][0]]
         image = cv2.imread(image_path)
-        print(image.shape)
-       
-
-        return torch.from_numpy(image), label
+        image_tensor = torch.from_numpy(image)
+        image_tensor = image_tensor.permute(2, 0, 1)
+        transformed_image = self.transform(image_tensor)      
+        return transformed_image, label
 def main():
     dataset = VideoDataset(ANNOTATIONS_PATH, VIDEOS_PATH)
     print(dataset.video_labels)
