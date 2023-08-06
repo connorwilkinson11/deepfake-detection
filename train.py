@@ -4,6 +4,8 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as T
 from efficientnet_pytorch import EfficientNet
 from dataset import ImageDataset
+import numpy as np
+from utils import log_training
 
 PRETRAINED_WEIGHTS_PATH = 'external_data/tf_efficientnet_b7_ns.pth'
 LEARNING_RATE = 10e-2
@@ -11,20 +13,43 @@ MOMENTUM = 0.8
 WEIGHT_DECAY = 1e-2
 NUM_CLASSES = 2
 LABELS = "train_sample_detections/metadata.json"
-NUM_EPOCHS = 5
+NUM_EPOCHS = 2
+
 
 def train_epoch(data_loader, model, criterion, optimizer):
-    """Train the `model` for one epoch of data from `data_loader`.
-
-    Use `optimizer` to optimize the specified `criterion`
-    """
-    for i, (X, y) in enumerate(data_loader):
-        # TODO implement training steps
+    for idx, (X, y) in enumerate(data_loader):
         optimizer.zero_grad()
         output = model(X.float())
         loss = criterion(output, y)
         loss.backward()
         optimizer.step()
+
+
+def predictions(logits):
+    predictions, index = torch.max(logits, 1)
+    return index
+
+def evaluate_epoch(data_loader, model, criterion):
+        y_true, y_pred, running_loss = [], [], []
+        for idx, (X, y) in enumerate(data_loader):
+            with torch.no_grad():
+                output = model(X.float())
+                predicted = predictions(output.data)
+                y_true.append(y)
+                y_pred.append(predicted)
+                total += 1
+                correct += (predicted == y)
+                running_loss.append(criterion(output, y).item())
+        
+        y_true = torch.cat(y_true)
+        y_pred = torch.cat(y_pred)
+        y_score = torch.cat(y_score)
+        loss = np.mean(running_loss)
+        acc = correct / total
+        stats = [loss, acc]
+        log_training(stats)
+        return acc, loss
+    
 
 def main():
     
@@ -45,5 +70,7 @@ def main():
             print(f'Epoch {epoch}/{NUM_EPOCHS - 1}')
             print('-' * 10)
             train_epoch(train_loader, model, criterion, optimizer)
+            evaluate_epoch(train_loader, model, criterion)
+            
 if __name__ == "__main__":
     main()

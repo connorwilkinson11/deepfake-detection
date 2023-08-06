@@ -58,6 +58,7 @@ class ImageDataset(Dataset):
         image_tensor = image_tensor.permute(2, 0, 1)
         transformed_image = self.transform(image_tensor)      
         return transformed_image, label
+    
 def main():
     dataset = VideoDataset(ANNOTATIONS_PATH, VIDEOS_PATH)
     print(dataset.video_labels)
